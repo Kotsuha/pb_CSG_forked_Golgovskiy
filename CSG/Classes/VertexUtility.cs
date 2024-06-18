@@ -323,5 +323,42 @@ namespace Parabox.CSG
 
             return v;
         }
+		
+	/// <summary>
+	/// Transform a vertex into model space.
+	/// </summary>
+	/// <param name="transform">The transform to apply.</param>
+	/// <param name="vertex">A world space vertex.</param>
+	/// <returns>A new vertex in model coordinate space.</returns>
+	public static Vertex InverseTransformVertex(this Transform transform, Vertex vertex)
+	{
+	    var v = new Vertex();
+	
+	    if (vertex.HasArrays(VertexAttributes.Position))
+	        v.position = transform.InverseTransformPoint(vertex.position);
+	
+	    if (vertex.HasArrays(VertexAttributes.Color))
+	        v.color = vertex.color;
+	
+	    if (vertex.HasArrays(VertexAttributes.Normal))
+	        v.normal = transform.InverseTransformDirection(vertex.normal);
+	
+	    if (vertex.HasArrays(VertexAttributes.Tangent))
+	        v.tangent = Quaternion.Inverse(transform.rotation) * vertex.tangent;
+	
+	    if (vertex.HasArrays(VertexAttributes.Texture0))
+	        v.uv0 = vertex.uv0;
+	
+	    if (vertex.HasArrays(VertexAttributes.Texture1))
+	        v.uv2 = vertex.uv2;
+	
+	    if (vertex.HasArrays(VertexAttributes.Texture2))
+	        v.uv3 = vertex.uv3;
+	
+	    if (vertex.HasArrays(VertexAttributes.Texture3))
+	        v.uv4 = vertex.uv4;
+	
+	    return v;
+	}
 	}
 }
