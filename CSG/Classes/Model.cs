@@ -32,6 +32,10 @@ namespace Parabox.CSG
             set { m_Indices = value; }
         }
 
+        public Mesh mesh
+        {
+            get { return this.TomMesh(null); }
+        }
 
         public Model(GameObject gameObject) :
             this(gameObject.GetComponent<MeshFilter>()?.sharedMesh,
@@ -124,7 +128,7 @@ namespace Parabox.CSG
         public Mesh ToMesh(Transform transform)
         {
             var mesh = new Mesh();
-            VertexUtility.SetMesh(mesh, m_Vertices.Select(x => transform.InverseTransformVertex(x)).ToList());
+            VertexUtility.SetMesh(mesh, m_Vertices.Select(x => transform == null ? x : transform.InverseTransformVertex(x)).ToList());
             mesh.subMeshCount = m_Indices.Count;
             for (int i = 0, c = mesh.subMeshCount; i < c; i++)
             {
