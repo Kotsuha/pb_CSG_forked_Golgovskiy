@@ -7,12 +7,12 @@ namespace Parabox.CSG
 {
     sealed class Node
     {
-        public List<Polygon> polygons;
+        public List<Polygon> polygons;  // List of polygons in this node
 
-        public Node front;
-        public Node back;
+        public Node front;  // Front node (subtree) of the BSP tree
+        public Node back;   // Back node (subtree) of the BSP tree
 
-        public Plane plane;
+        public Plane plane; // Plane used for partitioning polygons
 
         public Node()
         {
@@ -41,7 +41,7 @@ namespace Parabox.CSG
         }
 
         // Remove all polygons in this BSP tree that are inside the other BSP tree
-        // `bsp`.
+        // `other`.
         public void ClipTo(Node other)
         {
             this.polygons = other.ClipPolygons(this.polygons);
@@ -89,8 +89,10 @@ namespace Parabox.CSG
             if (list.Count < 1)
                 return;
 
+            // Check if this node is a new node or needs initialization
             bool newNode = plane == null || !plane.Valid(); 
 
+            // If it's a new node, initialize the plane
             if (newNode)
             {
                 plane = new Plane();
@@ -98,18 +100,20 @@ namespace Parabox.CSG
                 plane.w = list[0].plane.w;
             }
 
+            // Initialize the polygons list if it's null
             if (polygons == null)
                 polygons = new List<Polygon>();
                 
             var listFront = new List<Polygon>();
             var listBack = new List<Polygon>();
 
+            // Split each polygon in list into front and back lists based on the plane
             for (int i = 0; i < list.Count; i++)
                 plane.SplitPolygon(list[i], polygons, polygons, listFront, listBack);
             
-            
+            // Build the front subtree with polygons in listFront
             if (listFront.Count > 0)
-            {                
+            {    
                 // SplitPolygon can fail to correctly identify coplanar planes when the epsilon value is too low. When
                 // this happens, the front or back list will be filled and built into a new node recursively. This 
                 // check catches that case and sorts the front/back lists into the coplanar polygons collection.
@@ -119,6 +123,7 @@ namespace Parabox.CSG
                     (front ?? (front = new Node())).Build(listFront);
             }
 
+            // Build the back subtree with polygons in listBack
             if (listBack.Count > 0)
             {
                 if (newNode && list.SequenceEqual(listBack))
@@ -139,11 +144,13 @@ namespace Parabox.CSG
             List<Polygon> list_front = new List<Polygon>();
             List<Polygon> list_back = new List<Polygon>();
 
+            // Split each polygon in list into front and back lists based on the plane
             for (int i = 0; i < list.Count; i++)
             {
                 this.plane.SplitPolygon(list[i], list_front, list_back, list_front, list_back);
             }
 
+            // Recursively clip front and back polygons
             if (this.front != null)
             {
                 list_front = this.front.ClipPolygons(list_front);
@@ -158,8 +165,7 @@ namespace Parabox.CSG
                 list_back.Clear();
             }
 
-            // Position [First, Last]
-            // list_front.insert(list_front.end(), list_back.begin(), list_back.end());
+            // Concatenate front and back lists
             list_front.AddRange(list_back);
 
             return list_front;
@@ -171,16 +177,19 @@ namespace Parabox.CSG
             List<Polygon> list = this.polygons;
             List<Polygon> list_front = new List<Polygon>(), list_back = new List<Polygon>();
 
+            // Recursively get all polygons in front subtree
             if (this.front != null)
             {
                 list_front = this.front.AllPolygons();
             }
 
+            // Recursively get all polygons in back subtree
             if (this.back != null)
             {
                 list_back = this.back.AllPolygons();
             }
 
+            // Concatenate all lists
             list.AddRange(list_front);
             list.AddRange(list_back);
 
@@ -190,18 +199,23 @@ namespace Parabox.CSG
         #region STATIC OPERATIONS
 
         // Return a new CSG solid representing space in either this solid or in the
-        // solid `csg`. Neither this solid nor the solid `csg` are modified.
+        // solid `b`. Neither this solid nor the solid `b` are modified.
         public static Node Union(Node a1, Node b1)
         {
+            // Clone the input nodes to prevent modification
             Node a = a1.Clone();
             Node b = b1.Clone();
         
+            // Clip node a to node b and vice versa
             a.ClipTo(b);
             b.ClipTo(a);
+            
+            // Invert node b and clip it to node a again
             b.Invert();
             b.ClipTo(a);
             b.Invert();
         
+            // Rebuild node a with all polygons from both nodes
             a.Build(b.AllPolygons());
         
             Node ret = new Node(a.AllPolygons());
@@ -210,18 +224,24 @@ namespace Parabox.CSG
         }
         
         // Return a new CSG solid representing space in this solid but not in the
-        // solid `csg`. Neither this solid nor the solid `csg` are modified.
+        // solid `b`. Neither this solid nor the solid `b` are modified.
         public static Node Subtract(Node a1, Node b1)
         {
+            // Clone the input nodes to prevent modification
             Node a = a1.Clone();
             Node b = b1.Clone();
         
+            // Invert node a and clip it to node b
             a.Invert();
             a.ClipTo(b);
+            
+            // Clip node b to inverted node a and invert node b
             b.ClipTo(a);
             b.Invert();
             b.ClipTo(a);
             b.Invert();
+            
+            // Rebuild node a with all polygons from clipped node b
             a.Build(b.AllPolygons());
             a.Invert();
         
@@ -230,19 +250,23 @@ namespace Parabox.CSG
             return ret;
         }
 
-        // Return a new CSG solid representing space both this solid and in the
-        // solid `csg`. Neither this solid nor the solid `csg` are modified.
+        // Return a new CSG solid representing space both in this solid and in the
+        // solid `b`. Neither this solid nor the solid `b` are modified.
         public static Node Intersect(Node a1, Node b1)
         {
+            // Clone the input nodes to prevent modification
             Node a = a1.Clone();
             Node b = b1.Clone();
 
+            // Invert node a and clip node b to it
             a.Invert();
             b.ClipTo(a);
+            
+            // Invert node b and clip node a to it
             b.Invert();
             a.ClipTo(b);
-            b.ClipTo(a);
 
+            // Rebuild node a with all polygons from clipped node b
             a.Build(b.AllPolygons());
             a.Invert();
 
