@@ -32,10 +32,6 @@ namespace Parabox.CSG
             set { m_Indices = value; }
         }
 
-        public Mesh mesh
-        {
-            get { return (Mesh)this; }
-        }
 
         public Model(GameObject gameObject) :
             this(gameObject.GetComponent<MeshFilter>()?.sharedMesh,
@@ -125,15 +121,15 @@ namespace Parabox.CSG
             return list;
         }
 
-        public static explicit operator Mesh(Model model)
+        public Mesh ToMesh(Transform transform)
         {
             var mesh = new Mesh();
-            VertexUtility.SetMesh(mesh, model.m_Vertices);
-            mesh.subMeshCount = model.m_Indices.Count;
+            VertexUtility.SetMesh(mesh, m_Vertices.Select(x => transform.InverseTransformVertex(x)).ToList());
+            mesh.subMeshCount = m_Indices.Count;
             for (int i = 0, c = mesh.subMeshCount; i < c; i++)
             {
 #if UNITY_2019_3_OR_NEWER
-                mesh.SetIndices(model.m_Indices[i], MeshTopology.Triangles, i);
+                mesh.SetIndices(m_Indices[i], MeshTopology.Triangles, i);
 #else
                 mesh.SetIndices(model.m_Indices[i].ToArray(), MeshTopology.Triangles, i);
 #endif
