@@ -31,7 +31,8 @@ namespace Parabox.CSG
             get { return m_Indices; }
             set { m_Indices = value; }
         }
-
+        
+        // [Not recommended] Leaves mesh in world space. Use ToMesh(Transform transform) instead. 
         public Mesh mesh
         {
             get { return this.TomMesh(null); }
