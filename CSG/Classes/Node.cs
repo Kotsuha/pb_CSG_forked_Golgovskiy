@@ -174,7 +174,7 @@ namespace Parabox.CSG
         // Return a list of all polygons in this BSP tree.
         public List<Polygon> AllPolygons()
         {
-            List<Polygon> list = polygons != null ? new List<Polygon>(polygons) : new List<Polygon>();
+            List<Polygon> list = new List<Polygon>(polygons);
             List<Polygon> list_front = new List<Polygon>(), list_back = new List<Polygon>();
 
             // Recursively get all polygons in front subtree
