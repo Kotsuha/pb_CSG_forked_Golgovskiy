@@ -184,6 +184,12 @@ namespace Parabox.CSG
             if (vertices == null)
                 throw new ArgumentNullException("vertices");
 
+            if (vertices.Count == 0)
+            {
+                mesh.Clear();
+                return;
+            }
+
             Vector3[] positions = null;
             Color[] colors = null;
             Vector2[] uv0s = null;

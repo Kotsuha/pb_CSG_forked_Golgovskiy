@@ -1,18 +1,17 @@
-using UnityEngine;
+using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace Parabox.CSG
 {
     sealed class Node
     {
-        public List<Polygon> polygons;  // List of polygons in this node
+        public List<Polygon> polygons = new List<Polygon>();  // List of polygons in this node
 
         public Node front;  // Front node (subtree) of the BSP tree
         public Node back;   // Back node (subtree) of the BSP tree
 
-        public Plane plane; // Plane used for partitioning polygons
+        public Plane plane = new Plane(); // Plane used for partitioning polygons
 
         public Node()
         {
@@ -22,11 +21,20 @@ namespace Parabox.CSG
 
         public Node(List<Polygon> list)
         {
+            if (list == null)
+                throw new ArgumentNullException(nameof(list));
+
             Build(list);
         }
 
         public Node(List<Polygon> list, Plane plane, Node front, Node back)
         {
+            if (list == null)
+                throw new ArgumentNullException(nameof(list));
+
+            if (plane == null)
+                throw new ArgumentNullException(nameof(plane));
+
             this.polygons = list;
             this.plane = plane;
             this.front = front;
@@ -86,6 +94,9 @@ namespace Parabox.CSG
         // (no heuristic is used to pick a good split).
         public void Build(List<Polygon> list)
         {
+            if (list == null)
+                throw new ArgumentNullException(nameof(list));
+
             if (list.Count < 1)
                 return;
 
